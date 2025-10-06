@@ -13,5 +13,6 @@
 # limitations under the License.
 
 """data_analyst_agent for finding information using google search"""
-
+from dotenv import load_dotenv
+load_dotenv()
 from .agent import data_analyst_agent

@@ -1,7 +1,14 @@
+
 from django.urls import path
-from .views import hello_world,api_root
+from . import views
 
 urlpatterns = [
-    path('', api_root, name='api_root'),
-    path('hello/', hello_world, name='hello_world'),
+    # Your existing endpoint to start the chat
+    path('chat/', views.chat_endpoint, name='chat_endpoint'),
+
+    # Add this NEW path for checking the status
+    path('chat/status/<str:task_id>/', views.chat_status, name='chat_status'),
+
+    # Your existing health check endpoint
+    path('health/', views.health_check, name='health_check'),
 ]
