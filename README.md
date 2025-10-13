@@ -41,5 +41,24 @@ This repository works alongside [Deploy-agents](https://github.com/suryarathee/D
 - Node.js and npm (for frontend components)
 - Docker (optional, for containerized deployment)
 
-### Installation
+
+### Usage
+
+- Instructions for running the backend Django and FastAPI services.
+- Running and interacting with financial advising agents.
+- Access real-time dashboards for stock market visualization and sentiment analytics.
+
+---
+
+## Contribution
+
+Contributions, issues, and feature requests are welcome. Please adhere to the code style and project guidelines.
+
+## License
+
+This project is open-source. Please refer to the LICENSE file for details.
+
+---
+
+For more information about deployment and advanced agent management, visit [Deploy-agents](https://github.com/suryarathee/Deploy-agents).
 
