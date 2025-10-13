@@ -1,5 +1,5 @@
 # Fin-agents
-
+This repository works alongside [Deploy-agents](https://github.com/suryarathee/Deploy-agents)
 ## Overview
 
 Fin-agents is a sophisticated multi-model agent system designed for autonomous financial advising and data analysis. Built primarily with Django, FastAPI, TypeScript, and Google Agent Development Kit (ADK), this project enables seamless backend integrations and advanced financial insights.
