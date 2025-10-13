@@ -55,7 +55,9 @@ This repository works alongside [Deploy-agents](https://github.com/suryarathee/D
 Contributions, issues, and feature requests are welcome. Please adhere to the code style and project guidelines.
 
 ## License
-
+Apache License
+Version 2.0, January 2004
+http://www.apache.org/licenses/
 This project is open-source. Please refer to the LICENSE file for details.
 
 ---
