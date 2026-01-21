@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 
+// Type declaration for window.LightweightCharts
+declare global {
+  interface Window {
+    LightweightCharts?: {
+      createChart: any;
+      ColorType: any;
+    };
+  }
+}
+
 // --- StockData Interface (from quote endpoint) ---
 interface StockData {
   symbol: string;
