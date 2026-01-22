@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  Activity, TrendingUp, TrendingDown, Globe, Plus, X, Search, 
+  Activity, TrendingUp, TrendingDown, Globe, X, Search,
   AlertCircle, Wifi, WifiOff, Loader2, BarChart2, MessageSquare, Send, Minimize2 
 } from 'lucide-react';
-import API_URL from './config.ts';
+import API_URL from './config';
 // --- Types ---
 interface StockData {
   symbol: string;
