@@ -3,7 +3,7 @@ import {
   Activity, TrendingUp, TrendingDown, Globe, Plus, X, Search, 
   AlertCircle, Wifi, WifiOff, Loader2, BarChart2, MessageSquare, Send, Minimize2 
 } from 'lucide-react';
-
+import API_URL from './config.ts';
 // --- Types ---
 interface StockData {
   symbol: string;
@@ -444,7 +444,7 @@ export default function App() {
     setChatLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/chat/', {
+      const response = await fetch(`${API_URL}/api/chat/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
