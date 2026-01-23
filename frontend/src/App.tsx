@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
+import {
   Activity, TrendingUp, TrendingDown, Globe, X, Search,
-  AlertCircle, Wifi, WifiOff, Loader2, BarChart2, MessageSquare, Send, Minimize2 
+  AlertCircle, Wifi, WifiOff, Loader2, BarChart2, MessageSquare, Send, Minimize2
 } from 'lucide-react';
 import API_URL from './config';
 // --- Types ---
@@ -62,7 +62,7 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
   useEffect(() => {
     const initWidget = () => {
       if (window.TradingView && containerRef.current) {
-        containerRef.current.innerHTML = ""; 
+        containerRef.current.innerHTML = "";
         const div = document.createElement("div");
         div.id = widgetId;
         div.style.height = "100%";
@@ -101,8 +101,8 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
       } else {
         const checkExist = setInterval(() => {
           if (window.TradingView) {
-             initWidget();
-             clearInterval(checkExist);
+            initWidget();
+            clearInterval(checkExist);
           }
         }, 100);
       }
@@ -111,7 +111,7 @@ const TradingViewWidget = ({ symbol }: { symbol: string }) => {
 
   return (
     <div className="relative w-full h-[500px] bg-gray-800 rounded-xl overflow-hidden border border-gray-700 shadow-2xl mb-8">
-       <div ref={containerRef} className="h-full w-full" />
+      <div ref={containerRef} className="h-full w-full" />
     </div>
   );
 };
@@ -142,7 +142,7 @@ const SymbolSearch = ({ apiKey, onSelect, placeholder = "Search symbol..." }: { 
           const response = await fetch(`https://finnhub.io/api/v1/search?q=${query}&token=${apiKey}`);
           const data: FinnhubSearchResponse = await response.json();
           if (data && data.result) {
-            setResults(data.result.slice(0, 8)); 
+            setResults(data.result.slice(0, 8));
             setIsOpen(true);
           }
         } catch (error) {
@@ -200,11 +200,11 @@ const SymbolSearch = ({ apiKey, onSelect, placeholder = "Search symbol..." }: { 
           ))}
         </div>
       )}
-      
+
       {isOpen && results.length === 0 && !isLoading && query.length > 0 && (
-         <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 text-center text-gray-400 text-sm">
-           No symbols found
-         </div>
+        <div className="absolute z-50 w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 text-center text-gray-400 text-sm">
+          No symbols found
+        </div>
       )}
     </div>
   );
@@ -225,21 +225,21 @@ const StockCard = ({ data, onRemove, onClick, isActive }: { data: StockData; onR
   useEffect(() => {
     if (price > prevPrice.current) setFlash('green');
     else if (price < prevPrice.current) setFlash('red');
-    
+
     const timer = setTimeout(() => setFlash(null), 300);
     prevPrice.current = price;
     return () => clearTimeout(timer);
   }, [price]);
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className={`relative bg-gray-800 rounded-xl p-6 border transition-all duration-300 cursor-pointer group 
         ${isActive ? 'ring-2 ring-blue-500 border-transparent' : ''}
         ${flash === 'green' ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : flash === 'red' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'border-gray-700 hover:border-gray-500 hover:shadow-lg hover:shadow-blue-500/10'}
       `}
     >
-      <button 
+      <button
         onClick={(e) => {
           e.stopPropagation();
           onRemove(data.symbol);
@@ -253,7 +253,7 @@ const StockCard = ({ data, onRemove, onClick, isActive }: { data: StockData; onR
         <div>
           <h3 className="text-lg font-bold text-white tracking-wide">{data.symbol}</h3>
           <span className="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-900 rounded mt-1 inline-block">
-             LIVE
+            LIVE
           </span>
         </div>
         <div className={`p-2 rounded-full ${isPositive ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
@@ -362,10 +362,13 @@ export default function App() {
 
       // 2. Try to get the status
       try {
-        const response = await fetch(`${API_URL}/api/chat/status/${taskId}/`);
+        const pollUrl = `${API_URL}/api/chat/status/${taskId}/`;
+        console.log('Polling chat status from:', pollUrl);
+        const response = await fetch(pollUrl);
         if (!response.ok) throw new Error('Network response was not ok');
-        
+
         const data = await response.json();
+        console.log('Poll response data:', data);
         const { status, result } = data;
 
         consecutiveErrors = 0;
@@ -410,6 +413,7 @@ export default function App() {
         // If 'PENDING', continue polling
 
       } catch (error) {
+        console.error('Error polling chat status:', error);
         consecutiveErrors++;
         if (consecutiveErrors > MAX_CONSECUTIVE_ERRORS) {
           clearInterval(intervalId);
@@ -430,21 +434,23 @@ export default function App() {
 
   const sendChatMessage = async () => {
     if (!chatInputValue.trim()) return;
-    
+
     const newUserMessage: ChatMessage = {
       id: Date.now(),
       text: chatInputValue,
       sender: 'user',
       timestamp: new Date(),
     };
-    
+
     setMessages(prev => [...prev, newUserMessage]);
     const currentInput = chatInputValue;
     setChatInputValue('');
     setChatLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/chat/`, {
+      const requestUrl = `${API_URL}/api/chat/`;
+      console.log('Sending chat message to:', requestUrl, 'Payload:', { message: currentInput });
+      const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -455,14 +461,16 @@ export default function App() {
       if (!response.ok) throw new Error('Network response was not ok');
 
       const data = await response.json();
+      console.log('Chat message sent, response:', data);
       const { task_id } = data;
-      
+
       if (task_id) {
         await pollChatResult(task_id);
       } else {
         throw new Error('Failed to get a task ID from the server.');
       }
     } catch (error) {
+      console.error('Error in sendChatMessage:', error);
       setMessages((prev) => [
         ...prev,
         {
@@ -491,7 +499,7 @@ export default function App() {
     try {
       const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`);
       const data = await response.json();
-      
+
       if (!data || typeof data.c !== 'number') return;
 
       setStockData(prev => ({
@@ -523,8 +531,8 @@ export default function App() {
     ws.onopen = () => {
       setStatus('connected');
       symbols.forEach(symbol => {
-        if(ws.readyState === WebSocket.OPEN) {
-             ws.send(JSON.stringify({ type: 'subscribe', symbol }));
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'subscribe', symbol }));
         }
       });
     };
@@ -563,8 +571,8 @@ export default function App() {
 
     ws.onclose = () => setStatus('disconnected');
     ws.onerror = (e) => {
-        console.error("WebSocket Error", e);
-        setStatus('disconnected');
+      console.error("WebSocket Error", e);
+      setStatus('disconnected');
     };
 
     return () => {
@@ -584,12 +592,12 @@ export default function App() {
   const removeSymbol = (symbolToRemove: string) => {
     setSymbols(prev => prev.filter(s => s !== symbolToRemove));
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ type: 'unsubscribe', symbol: symbolToRemove }));
+      socketRef.current.send(JSON.stringify({ type: 'unsubscribe', symbol: symbolToRemove }));
     }
     setStockData(prev => {
-        const next = { ...prev };
-        delete next[symbolToRemove];
-        return next;
+      const next = { ...prev };
+      delete next[symbolToRemove];
+      return next;
     });
   };
 
@@ -613,7 +621,7 @@ export default function App() {
                     <Wifi className="w-3 h-3" /> Live
                   </span>
                 ) : (
-                   <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded border border-red-400/20 uppercase font-bold tracking-wider">
+                  <span className="flex items-center gap-1 text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded border border-red-400/20 uppercase font-bold tracking-wider">
                     <WifiOff className="w-3 h-3" /> Offline
                   </span>
                 )}
@@ -622,7 +630,7 @@ export default function App() {
           </div>
 
           <div className="hidden sm:block w-72">
-             <SymbolSearch apiKey={apiKey} onSelect={handleAddSymbol} placeholder="Add symbol (e.g. NVDA)" />
+            <SymbolSearch apiKey={apiKey} onSelect={handleAddSymbol} placeholder="Add symbol (e.g. NVDA)" />
           </div>
         </div>
       </header>
@@ -630,68 +638,68 @@ export default function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="sm:hidden mb-6">
-           <SymbolSearch apiKey={apiKey} onSelect={handleAddSymbol} placeholder="Search symbol..." />
+          <SymbolSearch apiKey={apiKey} onSelect={handleAddSymbol} placeholder="Search symbol..." />
         </div>
 
         {/* Chart Section */}
         {apiKey && (
           <div className="mb-8">
-             <div className="flex items-center gap-2 mb-4">
-                <BarChart2 className="w-5 h-5 text-blue-400" />
-                <h2 className="text-lg font-bold text-white">Market Analysis: <span className="text-blue-400">{activeSymbol}</span></h2>
-             </div>
-             <TradingViewWidget symbol={activeSymbol} />
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart2 className="w-5 h-5 text-blue-400" />
+              <h2 className="text-lg font-bold text-white">Market Analysis: <span className="text-blue-400">{activeSymbol}</span></h2>
+            </div>
+            <TradingViewWidget symbol={activeSymbol} />
           </div>
         )}
 
         {Object.keys(stockData).length === 0 && apiKey && (
           <div className="flex flex-col items-center justify-center py-10 text-gray-500">
-             <div className="animate-spin mb-4">
-                <Activity className="w-8 h-8 text-blue-500" />
-             </div>
-             <p>Connecting to global exchanges...</p>
+            <div className="animate-spin mb-4">
+              <Activity className="w-8 h-8 text-blue-500" />
+            </div>
+            <p>Connecting to global exchanges...</p>
           </div>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {symbols.map((symbol) => (
             stockData[symbol] ? (
-              <StockCard 
-                key={symbol} 
-                data={stockData[symbol]} 
+              <StockCard
+                key={symbol}
+                data={stockData[symbol]}
                 onRemove={removeSymbol}
                 onClick={() => setActiveSymbol(symbol)}
                 isActive={activeSymbol === symbol}
               />
             ) : (
-             <div key={symbol} className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 animate-pulse relative">
+              <div key={symbol} className="bg-gray-800/50 rounded-xl p-6 border border-gray-700/50 animate-pulse relative">
                 <div className="h-6 bg-gray-700 rounded w-1/3 mb-2"></div>
                 <div className="h-4 bg-gray-700 rounded w-1/4 mb-6"></div>
                 <div className="h-8 bg-gray-700 rounded w-1/2 mb-2"></div>
                 <div className="h-4 bg-gray-700 rounded w-1/3"></div>
                 <button onClick={() => removeSymbol(symbol)} className="absolute top-4 right-4 text-gray-600">
-                   <X className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
-             </div>
+              </div>
             )
           ))}
         </div>
 
         <div className="mt-12 border-t border-gray-800 pt-8 text-center sm:text-left mb-20">
           <div className="bg-blue-900/20 border border-blue-900/50 rounded-lg p-4 inline-flex items-start gap-3 max-w-2xl">
-             <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-             <div className="text-sm text-blue-200/80">
-                <p className="font-semibold text-blue-100 mb-1">Market Data Note</p>
-                <p>US Stocks, Forex (e.g., <code className="bg-blue-900/40 px-1 rounded">IC MARKETS:1</code>), and Crypto (e.g., <code className="bg-blue-900/40 px-1 rounded">BINANCE:BTCUSDT</code>) update in real-time via WebSocket. Other international exchanges may be delayed by 15 minutes or require polling depending on your Finnhub plan.</p>
-             </div>
+            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-200/80">
+              <p className="font-semibold text-blue-100 mb-1">Market Data Note</p>
+              <p>US Stocks, Forex (e.g., <code className="bg-blue-900/40 px-1 rounded">IC MARKETS:1</code>), and Crypto (e.g., <code className="bg-blue-900/40 px-1 rounded">BINANCE:BTCUSDT</code>) update in real-time via WebSocket. Other international exchanges may be delayed by 15 minutes or require polling depending on your Finnhub plan.</p>
+            </div>
           </div>
         </div>
       </main>
 
       {/* --- Chatbot UI --- */}
-      
+
       {/* Floating Toggle Button */}
-      <button 
+      <button
         onClick={() => setIsSidebarOpen(true)}
         className={`fixed bottom-6 right-6 p-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-500/30 transition-all duration-300 z-50 ${isSidebarOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'}`}
       >
@@ -710,11 +718,11 @@ export default function App() {
               <div>
                 <h3 className="font-bold text-white">Financial Assistant</h3>
                 <p className="text-xs text-green-400 flex items-center gap-1">
-                   <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span> Online
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span> Online
                 </p>
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(false)}
               className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-lg transition-colors"
             >
@@ -726,12 +734,11 @@ export default function App() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/95">
             {messages.map((msg) => (
               <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div 
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${
-                    msg.sender === 'user' 
-                      ? 'bg-blue-600 text-white rounded-tr-sm' 
+                <div
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${msg.sender === 'user'
+                      ? 'bg-blue-600 text-white rounded-tr-sm'
                       : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
-                  }`}
+                    }`}
                 >
                   <p>{msg.text}</p>
                   <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
@@ -740,16 +747,16 @@ export default function App() {
                 </div>
               </div>
             ))}
-            
+
             {chatLoading && (
               <div className="flex justify-start">
-                 <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-tl-sm px-4 py-3">
-                   <div className="flex gap-1.5">
-                     <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                     <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                     <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                   </div>
-                 </div>
+                <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-tl-sm px-4 py-3">
+                  <div className="flex gap-1.5">
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -766,7 +773,7 @@ export default function App() {
                 disabled={chatLoading}
                 className="w-full bg-gray-900 text-white border border-gray-700 rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none h-12 min-h-[48px] max-h-32 scrollbar-hide"
               />
-              <button 
+              <button
                 onClick={sendChatMessage}
                 disabled={chatLoading || !chatInputValue.trim()}
                 className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
@@ -780,10 +787,10 @@ export default function App() {
           </div>
         </div>
       </div>
-      
+
       {/* Overlay for mobile when sidebar is open */}
       {isSidebarOpen && (
-        <div 
+        <div
           onClick={() => setIsSidebarOpen(false)}
           className="fixed inset-0 bg-black/50 z-40 sm:hidden backdrop-blur-sm"
         />
