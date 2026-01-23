@@ -4,11 +4,53 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-# ✅ Task Manager server (FastAPI)
+# ✅ Task Manager server (FastAPI) Configuration
+PRIMARY_FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com:8082"
+LOCAL_FASTAPI_URL = "http://127.0.0.1:8082"
 
-# Ensure your FastAPI server is running: uvicorn main:app --port 8082
-TASK_MANAGER_URL = "http://127.0.0.1:8082"
-#TASK_MANAGER_URL = "https://agent-middleware-292413134253.asia-northeast1.run.app/"
+def request_task_manager(method, endpoint, payload=None, timeout=10):
+    """
+    Helper function to send requests to the Task Manager (FastAPI).
+    It first tries the PRIMARY_FASTAPI_URL (hosted).
+    If that fails (connection error), it falls back to LOCAL_FASTAPI_URL.
+    """
+    urls_to_try = [PRIMARY_FASTAPI_URL, LOCAL_FASTAPI_URL]
+    
+    last_exception = None
+
+    for base_url in urls_to_try:
+        url = f"{base_url}{endpoint}"
+        try:
+            print(f"[DJANGO] Attempting connection to Task Manager at: {url}")
+            if method.upper() == 'POST':
+                response = requests.post(url, json=payload, timeout=timeout)
+            elif method.upper() == 'GET':
+                response = requests.get(url, timeout=timeout)
+            else:
+                raise ValueError(f"Unsupported method: {method}")
+                
+            # If we get a response, even if it's an error status code (like 404 or 500),
+            # we consider the connection successful and return the response.
+            # We let the caller handle the status code logic.
+            return response
+
+        except requests.exceptions.ConnectionError as e:
+            print(f"[DJANGO WARNING] Connection failed to {base_url}. Error: {e}")
+            last_exception = e
+            continue  # Try the next URL
+        except Exception as e:
+            # For other errors (like timeout inside the request but connection established), 
+            # we might also want to fallback? For now let's treat generic RequestException as fallback-able 
+            # if strictly connection related, but here we catch generic Exception to be safe?
+            # Actually, standardizing on ConnectionError is safer for "server down" vs "bad request".
+            # Let's catch RequestException to cover timeouts too.
+            print(f"[DJANGO WARNING] Request failed to {base_url}. Error: {e}")
+            last_exception = e
+            continue
+
+    # If loop finishes, all attempts failed
+    print("[DJANGO ERROR] All Task Manager connection attempts failed.")
+    raise last_exception or Exception("Unknown connection error")
 
 
 @api_view(['POST'])
@@ -48,15 +90,11 @@ def chat_endpoint(request):
             "newMessage": message
         }
 
-        print(f"[DJANGO] Sending message to FastAPI task manager at {TASK_MANAGER_URL}")
         print(f"[DJANGO] User: {user_id}, Session: {session_id}")
 
-        # Send to the new /chat endpoint
-        response = requests.post(
-            f"{TASK_MANAGER_URL}/chat",
-            json=payload,
-            timeout=10
-        )
+        # Send to the /chat endpoint using fallback logic
+        response = request_task_manager('POST', '/chat', payload=payload)
+        
         response.raise_for_status()
         task_data = response.json()
 
@@ -68,24 +106,20 @@ def chat_endpoint(request):
             "message": "Task started successfully"
         }, status=status.HTTP_202_ACCEPTED)
 
-    except requests.exceptions.ConnectionError:
-        error_msg = f"Cannot connect to Task Manager at {TASK_MANAGER_URL}. Is the FastAPI server running on port 8082?"
-        print(f"[DJANGO ERROR] {error_msg}")
+    except requests.exceptions.HTTPError as e:
+        # This catches 4xx/5xx responses from the *successful* connection
+        print(f"[DJANGO ERROR] Task Manager returned error: {e}")
+        return Response(
+            {'error': f'Task Manager error: {str(e)}'},
+            status=status.HTTP_502_BAD_GATEWAY
+        )
+    except Exception as e:
+        # This handles the case where request_task_manager raises an exception (all connections failed)
+        error_msg = f"Cannot connect to Task Manager. Both Primary ({PRIMARY_FASTAPI_URL}) and Local ({LOCAL_FASTAPI_URL}) failed."
+        print(f"[DJANGO ERROR] {error_msg} Details: {str(e)}")
         return Response(
             {'error': error_msg},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
-        )
-    except requests.exceptions.RequestException as e:
-        print(f"[DJANGO ERROR] Connection to FastAPI failed: {str(e)}")
-        return Response(
-            {'error': f'Agent connection error: {str(e)}'},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE
-        )
-    except Exception as e:
-        print(f"[DJANGO ERROR] Unexpected error: {str(e)}")
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
 
@@ -103,29 +137,27 @@ def chat_status(request, task_id):
     """
     try:
         # Updated endpoint to match main.py: /task/{task_id}
-        status_response = requests.get(
-            f"{TASK_MANAGER_URL}/task/{task_id}",
-            timeout=10
-        )
+        response = request_task_manager('GET', f"/task/{task_id}")
 
-        if status_response.status_code == 404:
+        if response.status_code == 404:
             return Response(
                 {'status': 'NOT_FOUND', 'error': 'Task ID not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        status_response.raise_for_status()
-        return Response(status_response.json(), status=status.HTTP_200_OK)
+        response.raise_for_status()
+        return Response(response.json(), status=status.HTTP_200_OK)
 
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.HTTPError as e:
+        print(f"[DJANGO ERROR] Task Manager status check returned error: {e}")
         return Response(
-            {'error': f"Cannot connect to Task Manager at {TASK_MANAGER_URL}"},
-            status=status.HTTP_503_SERVICE_UNAVAILABLE
+            {'error': f'Task Manager error: {str(e)}'},
+            status=status.HTTP_502_BAD_GATEWAY
         )
-    except requests.exceptions.RequestException as e:
-        print(f"[DJANGO ERROR] Status check failed: {str(e)}")
+    except Exception as e:
+        print(f"[DJANGO ERROR] Status check connection failed: {str(e)}")
         return Response(
-            {'error': f'Agent status check error: {str(e)}'},
+            {'error': 'Cannot connect to Task Manager to check status.'},
             status=status.HTTP_503_SERVICE_UNAVAILABLE
         )
 
