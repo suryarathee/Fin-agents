@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Activity, TrendingUp, TrendingDown, Globe, X, Search,
-  AlertCircle, Wifi, WifiOff, Loader2, BarChart2, MessageSquare, Send, Minimize2
+  AlertCircle, Wifi, WifiOff, Loader2, BarChart2, Send, Minimize2, Maximize2
 } from 'lucide-react';
 import API_URL from './config';
+import LoadingScreen from './components/LoadingScreen';
 // let API_URL = ' http://127.0.0.1:8000/'
 // --- Types ---
 interface StockData {
@@ -293,6 +294,7 @@ const StockCard = ({ data, onRemove, onClick, isActive }: { data: StockData; onR
 
 // 5. Main Dashboard App (Includes Chatbot Logic)
 export default function App() {
+  const [isLoading, setIsLoading] = useState(true);
   const [apiKey] = useState<string>(import.meta.env.VITE_FINNHUB_API_KEY || '');
   const [symbols, setSymbols] = useState<string[]>(['AAPL', 'BINANCE:BTCUSDT', 'TSLA', 'MSFT', 'AMZN']);
   const [stockData, setStockData] = useState<Record<string, StockData>>({});
@@ -301,7 +303,7 @@ export default function App() {
   const socketRef = useRef<WebSocket | null>(null);
 
   // Chatbot State
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isSidebarExpanded, setIsSidebarExpanded] = useState<boolean>(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInputValue, setChatInputValue] = useState<string>('');
   const [chatLoading, setChatLoading] = useState<boolean>(false);
@@ -329,13 +331,19 @@ export default function App() {
         text: "Hello! I am your financial agent. Ask me about stock analysis, market trends, or any financial questions.",
         sender: 'bot',
         timestamp: new Date(),
+      },
+      {
+        id: Date.now() + 1,
+        text: "⚠️ Note: The first response may take up to 3 minutes while the server initializes.",
+        sender: 'bot',
+        timestamp: new Date(),
       }
     ]);
   }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isSidebarOpen]);
+  }, [messages]);
 
   const pollChatResult = async (taskId: string) => {
     const startTime = Date.now();
@@ -605,6 +613,8 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 font-sans selection:bg-blue-500/30 overflow-hidden">
 
+      {isLoading && <LoadingScreen onComplete={() => setIsLoading(false)} />}
+
 
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-40">
@@ -614,7 +624,7 @@ export default function App() {
               <Globe className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">MarketFlow</h1>
+              <h1 className="text-xl font-bold text-white tracking-tight">Fin-agents</h1>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400 font-medium">Global Real-Time Data</span>
                 {status === 'connected' ? (
@@ -695,107 +705,88 @@ export default function App() {
             </div>
           </div>
         </div>
-      </main>
-
-      {/* --- Chatbot UI --- */}
-
-      {/* Floating Toggle Button */}
-      <button
-        onClick={() => setIsSidebarOpen(true)}
-        className={`fixed bottom-6 right-6 p-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-lg shadow-blue-500/30 transition-all duration-300 z-50 ${isSidebarOpen ? 'opacity-0 scale-75 pointer-events-none' : 'opacity-100 scale-100'}`}
-      >
-        <MessageSquare className="w-6 h-6" />
-      </button>
-
-      {/* Sidebar Container */}
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-96 bg-gray-900 border-l border-gray-700 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex flex-col h-full">
-          {/* Sidebar Header */}
-          <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-800">
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-600/20 p-2 rounded-lg">
-                <Activity className="w-5 h-5 text-blue-400" />
-              </div>
-              <div>
-                <h3 className="font-bold text-white">Financial Assistant</h3>
-                <p className="text-xs text-green-400 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span> Online
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-lg transition-colors"
-            >
-              <Minimize2 className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/95">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${msg.sender === 'user'
-                      ? 'bg-blue-600 text-white rounded-tr-sm'
-                      : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
-                    }`}
-                >
-                  <p>{msg.text}</p>
-                  <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
-                    {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+        <div className="mt-12 mb-8">
+          <div className={`w-full ${isSidebarExpanded ? 'h-[800px]' : 'h-[600px]'} bg-gray-900 border border-gray-800 rounded-xl shadow-2xl flex flex-col transition-all duration-300`}>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur-sm rounded-t-xl">
+              <div className="flex items-center gap-2">
+                <div className="bg-blue-600/20 p-2 rounded-lg">
+                  <Activity className="w-5 h-5 text-blue-400" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white">Financial Assistant</h3>
+                  <p className="text-xs text-green-400 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400"></span> Online
                   </p>
                 </div>
               </div>
-            ))}
-
-            {chatLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-tl-sm px-4 py-3">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-4 bg-gray-800 border-t border-gray-700">
-            <div className="flex gap-2 relative">
-              <textarea
-                value={chatInputValue}
-                onChange={(e) => setChatInputValue(e.target.value)}
-                onKeyDown={handleChatKeyPress}
-                placeholder="Ask about market trends..."
-                disabled={chatLoading}
-                className="w-full bg-gray-900 text-white border border-gray-700 rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none h-12 min-h-[48px] max-h-32 scrollbar-hide"
-              />
               <button
-                onClick={sendChatMessage}
-                disabled={chatLoading || !chatInputValue.trim()}
-                className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
+                onClick={() => setIsSidebarExpanded(!isSidebarExpanded)}
+                className="text-gray-400 hover:text-white hover:bg-gray-700 p-2 rounded-lg transition-colors hidden sm:block"
+                title={isSidebarExpanded ? "Collapse" : "Expand"}
               >
-                <Send className="w-4 h-4" />
+                {isSidebarExpanded ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
               </button>
             </div>
-            <p className="text-[10px] text-gray-500 mt-2 text-center">
-              AI responses may vary. Not financial advice.
-            </p>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-900/50">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm ${msg.sender === 'user'
+                      ? 'bg-blue-600 text-white rounded-tr-sm'
+                      : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
+                      }`}
+                  >
+                    <p>{msg.text}</p>
+                    <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
+                      {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-800 border border-gray-700 rounded-2xl rounded-tl-sm px-4 py-3">
+                    <div className="flex gap-1.5">
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-4 bg-gray-900 border-t border-gray-800 rounded-b-xl">
+              <div className="flex gap-2 relative">
+                <textarea
+                  value={chatInputValue}
+                  onChange={(e) => setChatInputValue(e.target.value)}
+                  onKeyDown={handleChatKeyPress}
+                  placeholder="Ask about market trends..."
+                  disabled={chatLoading}
+                  className="w-full bg-gray-800 text-white border border-gray-700 rounded-xl pl-4 pr-12 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none h-12 min-h-[48px] max-h-32 scrollbar-hide"
+                />
+                <button
+                  onClick={sendChatMessage}
+                  disabled={chatLoading || !chatInputValue.trim()}
+                  className="absolute right-2 top-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-500 mt-2 text-center">
+                AI responses may vary. Not financial advice.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Overlay for mobile when sidebar is open */}
-      {isSidebarOpen && (
-        <div
-          onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black/50 z-40 sm:hidden backdrop-blur-sm"
-        />
-      )}
+      </main>
 
     </div>
   );
