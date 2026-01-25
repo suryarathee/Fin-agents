@@ -4,8 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-# ✅ Task Manager server (FastAPI) Configuration
-PRIMARY_FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com:8082"
+PRIMARY_FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com"
 LOCAL_FASTAPI_URL = "http://127.0.0.1:8082"
 
 def request_task_manager(method, endpoint, payload=None, timeout=10):
