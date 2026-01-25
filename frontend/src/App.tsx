@@ -3,6 +3,8 @@ import {
   Activity, TrendingUp, TrendingDown, Globe, X, Search,
   AlertCircle, Wifi, WifiOff, Loader2, BarChart2, Send, Minimize2, Maximize2
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import API_URL from './config';
 import LoadingScreen from './components/LoadingScreen';
 // let API_URL = ' http://127.0.0.1:8000/'
@@ -334,7 +336,7 @@ export default function App() {
       },
       {
         id: Date.now() + 1,
-        text: "⚠️ Note: The first response may take up to 3 minutes while the server initializes.",
+        text: "⚠️ Note: The first response may take up to 3 minutes while the server initializes. Retry until you get a response.",
         sender: 'bot',
         timestamp: new Date(),
       }
@@ -484,7 +486,7 @@ export default function App() {
         ...prev,
         {
           id: Date.now() + 1,
-          text: 'Sorry, could not connect to the agent. Ensure your local backend is running at 127.0.0.1:8000.',
+          text: 'Sorry, could not connect to the agent. Please Retry',
           sender: 'bot',
           timestamp: new Date(),
         },
@@ -739,7 +741,32 @@ export default function App() {
                       : 'bg-gray-800 text-gray-200 border border-gray-700 rounded-tl-sm'
                       }`}
                   >
-                    <p>{msg.text}</p>
+                    <div className="markdown-body">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ node, ...props }: any) => <p className="mb-2 last:mb-0" {...props} />,
+                          ul: ({ node, ...props }: any) => <ul className="list-disc ml-4 mb-2" {...props} />,
+                          ol: ({ node, ...props }: any) => <ol className="list-decimal ml-4 mb-2" {...props} />,
+                          li: ({ node, ...props }: any) => <li className="mb-1" {...props} />,
+                          a: ({ node, ...props }: any) => <a className="text-blue-300 hover:text-blue-100 underline" target="_blank" rel="noopener noreferrer" {...props} />,
+                          blockquote: ({ node, ...props }: any) => <blockquote className="border-l-4 border-gray-500 pl-4 py-1 my-2 bg-gray-800/50 rounded" {...props} />,
+                          code: ({ node, inline, className, children, ...props }: any) => {
+                            return inline ? (
+                              <code className="bg-gray-700/50 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                                {children}
+                              </code>
+                            ) : (
+                              <code className="block bg-gray-900/50 p-2 rounded-lg text-sm font-mono my-2 whitespace-pre-wrap overflow-x-auto" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                        }}
+                      >
+                        {msg.text}
+                      </ReactMarkdown>
+                    </div>
                     <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-blue-200' : 'text-gray-500'}`}>
                       {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
