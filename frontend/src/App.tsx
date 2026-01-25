@@ -3,8 +3,8 @@ import {
   Activity, TrendingUp, TrendingDown, Globe, X, Search,
   AlertCircle, Wifi, WifiOff, Loader2, BarChart2, MessageSquare, Send, Minimize2
 } from 'lucide-react';
-// import API_URL from './config';
-let API_URL = ' http://127.0.0.1:8000/'
+import API_URL from './config';
+// let API_URL = ' http://127.0.0.1:8000/'
 // --- Types ---
 interface StockData {
   symbol: string;
