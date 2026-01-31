@@ -298,7 +298,7 @@ const StockCard = ({ data, onRemove, onClick, isActive }: { data: StockData; onR
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [apiKey] = useState<string>(import.meta.env.VITE_FINNHUB_API_KEY || '');
-  const [symbols, setSymbols] = useState<string[]>(['AAPL', 'BINANCE:BTCUSDT', 'TSLA', 'MSFT', 'AMZN']);
+  const [symbols, setSymbols] = useState<string[]>(['AAPL', 'TSLA', 'MSFT', 'AMZN']);
   const [stockData, setStockData] = useState<Record<string, StockData>>({});
   const [status, setStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
   const [activeSymbol, setActiveSymbol] = useState<string>('SPY');
@@ -443,30 +443,18 @@ export default function App() {
     }, POLLING_INTERVAL);
   };
 
-  const sendChatMessage = async () => {
-    if (!chatInputValue.trim()) return;
-
-    const newUserMessage: ChatMessage = {
-      id: Date.now(),
-      text: chatInputValue,
-      sender: 'user',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, newUserMessage]);
-    const currentInput = chatInputValue;
-    setChatInputValue('');
+  const processMessage = async (messageText: string) => {
     setChatLoading(true);
 
     try {
       const requestUrl = `${API_URL}/api/chat/`;
-      console.log('Sending chat message to:', requestUrl, 'Payload:', { message: currentInput });
+      console.log('Sending chat message to:', requestUrl, 'Payload:', { message: messageText });
       const response = await fetch(requestUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: currentInput }),
+        body: JSON.stringify({ message: messageText }),
       });
 
       if (!response.ok) throw new Error('Network response was not ok');
@@ -481,7 +469,7 @@ export default function App() {
         throw new Error('Failed to get a task ID from the server.');
       }
     } catch (error) {
-      console.error('Error in sendChatMessage:', error);
+      console.error('Error in processMessage:', error);
       setMessages((prev) => [
         ...prev,
         {
@@ -493,6 +481,28 @@ export default function App() {
       ]);
       setChatLoading(false);
     }
+  };
+
+  useEffect(() => {
+    // Send silent "hey" on mount
+    processMessage("hey");
+  }, []);
+
+  const sendChatMessage = async () => {
+    if (!chatInputValue.trim()) return;
+
+    const newUserMessage: ChatMessage = {
+      id: Date.now(),
+      text: chatInputValue,
+      sender: 'user',
+      timestamp: new Date(),
+    };
+
+    setMessages(prev => [...prev, newUserMessage]);
+    const currentInput = chatInputValue;
+    setChatInputValue('');
+
+    await processMessage(currentInput);
   };
 
   const handleChatKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -696,16 +706,6 @@ export default function App() {
               </div>
             )
           ))}
-        </div>
-
-        <div className="mt-12 border-t border-gray-800 pt-8 text-center sm:text-left mb-20">
-          <div className="bg-blue-900/20 border border-blue-900/50 rounded-lg p-4 inline-flex items-start gap-3 max-w-2xl">
-            <AlertCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-200/80">
-              <p className="font-semibold text-blue-100 mb-1">Market Data Note</p>
-              <p>US Stocks, Forex (e.g., <code className="bg-blue-900/40 px-1 rounded">IC MARKETS:1</code>), and Crypto (e.g., <code className="bg-blue-900/40 px-1 rounded">BINANCE:BTCUSDT</code>) update in real-time via WebSocket. Other international exchanges may be delayed by 15 minutes or require polling depending on your Finnhub plan.</p>
-            </div>
-          </div>
         </div>
         <div className="mt-12 mb-8">
           <div className={`w-full ${isSidebarExpanded ? 'h-[800px]' : 'h-[600px]'} bg-gray-900 border border-gray-800 rounded-xl shadow-2xl flex flex-col transition-all duration-300`}>
