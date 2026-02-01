@@ -1,4 +1,6 @@
-/*@tailwind base;*/
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+@tailwind base;
 /*@tailwind components;*/
 /*@tailwind utilities;*/
 /*:root {*/
@@ -25,13 +27,14 @@
 /*  color: #535bf2;*/
 /*}*/
 
-/*body {*/
-/*  margin: 0;*/
-/*  display: flex;*/
-/*  place-items: center;*/
-/*  min-width: 320px;*/
-/*  min-height: 100vh;*/
-/*}*/
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    overscroll-behavior: none;
+    background-color: #111827;
+}
+
 
 /*h1 {*/
 /*  font-size: 3.2em;*/
@@ -69,3 +72,17 @@
 /*    background-color: #f9f9f9;*/
 /*  }*/
 /*}*/
+
+@layer utilities {
+    .font-led {
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    .text-shadow-glow-green {
+        text-shadow: 0 0 10px rgba(74, 222, 128, 0.5), 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+
+    .text-shadow-glow-red {
+        text-shadow: 0 0 10px rgba(248, 113, 113, 0.5), 0 0 20px rgba(248, 113, 113, 0.3);
+    }
+}

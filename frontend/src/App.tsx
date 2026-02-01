@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import API_URL from './config';
 import LoadingScreen from './components/LoadingScreen';
+import MarketClock from './components/MarketClock';
 // let API_URL = ' http://127.0.0.1:8000/'
 // --- Types ---
 interface StockData {
@@ -238,7 +239,7 @@ const StockCard = ({ data, onRemove, onClick, isActive }: { data: StockData; onR
   return (
     <div
       onClick={onClick}
-      className={`relative bg-gray-800 rounded-xl p-6 border transition-all duration-300 cursor-pointer group 
+      className={`relative bg-gray-800 rounded-xl p-4 border transition-all duration-300 cursor-pointer group 
         ${isActive ? 'ring-2 ring-blue-500 border-transparent' : ''}
         ${flash === 'green' ? 'border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]' : flash === 'red' ? 'border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.3)]' : 'border-gray-700 hover:border-gray-500 hover:shadow-lg hover:shadow-blue-500/10'}
       `}
@@ -248,46 +249,46 @@ const StockCard = ({ data, onRemove, onClick, isActive }: { data: StockData; onR
           e.stopPropagation();
           onRemove(data.symbol);
         }}
-        className="absolute top-4 right-4 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 z-10"
+        className="absolute top-3 right-3 text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 z-10"
       >
-        <X className="w-4 h-4" />
+        <X className="w-3.5 h-3.5" />
       </button>
 
-      <div className="flex justify-between items-start mb-4">
+      <div className="flex justify-between items-start mb-2">
         <div>
-          <h3 className="text-lg font-bold text-white tracking-wide">{data.symbol}</h3>
-          <span className="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-900 rounded mt-1 inline-block">
+          <h3 className="text-base font-bold text-white tracking-wide">{data.symbol}</h3>
+          <span className="text-[10px] font-medium text-gray-400 px-1.5 py-0.5 bg-gray-900 rounded mt-0.5 inline-block">
             LIVE
           </span>
         </div>
-        <div className={`p-2 rounded-full ${isPositive ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+        <div className={`p-1.5 rounded-full ${isPositive ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
           {isPositive ? (
-            <TrendingUp className="w-6 h-6 text-green-500" />
+            <TrendingUp className="w-4 h-4 text-green-500" />
           ) : (
-            <TrendingDown className="w-6 h-6 text-red-500" />
+            <TrendingDown className="w-4 h-4 text-red-500" />
           )}
         </div>
       </div>
 
-      <div className="mb-4">
-        <div className={`text-3xl font-bold transition-colors duration-300 ${flash === 'green' ? 'text-green-400' : flash === 'red' ? 'text-red-400' : 'text-white'}`}>
+      <div className="mb-2">
+        <div className={`text-2xl font-bold transition-colors duration-300 ${flash === 'green' ? 'text-green-400' : flash === 'red' ? 'text-red-400' : 'text-white'}`}>
           {price.toFixed(2)}
         </div>
-        <div className={`flex items-center mt-1 text-sm font-medium ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+        <div className={`flex items-center mt-0.5 text-xs font-medium ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
           <span>{change > 0 ? '+' : ''}{change.toFixed(2)}</span>
-          <span className="mx-2">•</span>
+          <span className="mx-1.5">•</span>
           <span>{percentChange.toFixed(2)}%</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 border-t border-gray-700 pt-4">
+      <div className="grid grid-cols-2 gap-2 border-t border-gray-700 pt-2">
         <div>
-          <p className="text-gray-500 text-xs uppercase mb-1">Open</p>
-          <p className="text-gray-300 font-mono">{open.toFixed(2)}</p>
+          <p className="text-gray-500 text-[10px] uppercase mb-0.5">Open</p>
+          <p className="text-gray-300 font-mono text-xs">{open.toFixed(2)}</p>
         </div>
         <div>
-          <p className="text-gray-500 text-xs uppercase mb-1">High</p>
-          <p className="text-gray-300 font-mono">{high.toFixed(2)}</p>
+          <p className="text-gray-500 text-[10px] uppercase mb-0.5">High</p>
+          <p className="text-gray-300 font-mono text-xs">{high.toFixed(2)}</p>
         </div>
       </div>
     </div>
@@ -328,12 +329,6 @@ export default function App() {
   useEffect(() => {
     // Initial welcome message
     setMessages([
-      {
-        id: Date.now(),
-        text: "Hello! I am your financial agent. Ask me about stock analysis, market trends, or any financial questions.",
-        sender: 'bot',
-        timestamp: new Date(),
-      },
       {
         id: Date.now() + 1,
         text: "⚠️ Note: The first response may take up to 3 minutes while the server initializes. Retry until you get a response.",
@@ -483,9 +478,14 @@ export default function App() {
     }
   };
 
+  const hasInitialized = useRef(false);
+
   useEffect(() => {
-    // Send silent "hey" on mount
-    processMessage("hey");
+    // Send silent "hey" on mount, but only once
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      processMessage("hey");
+    }
   }, []);
 
   const sendChatMessage = async () => {
@@ -630,7 +630,7 @@ export default function App() {
 
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
               <Globe className="w-6 h-6 text-white" />
@@ -655,7 +655,8 @@ export default function App() {
           <div className="hidden sm:block w-72">
             <SymbolSearch apiKey={apiKey} onSelect={handleAddSymbol} placeholder="Add symbol (e.g. NVDA)" />
           </div>
-        </div>
+        </div> */}
+        <MarketClock />
       </header>
 
       {/* Main Content */}
@@ -667,10 +668,8 @@ export default function App() {
         {/* Chart Section */}
         {apiKey && (
           <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <BarChart2 className="w-5 h-5 text-blue-400" />
-              <h2 className="text-lg font-bold text-white">Market Analysis: <span className="text-blue-400">{activeSymbol}</span></h2>
-            </div>
+
+
             <TradingViewWidget symbol={activeSymbol} />
           </div>
         )}
