@@ -10,7 +10,7 @@ import LoadingScreen from './components/LoadingScreen';
 import MarketClock from './components/MarketClock';
 import SentimentTreemap from './components/SentimentTreemap';
 import { TradingViewWidget } from './components/TradingViewWidget';
-let API_URL = 'http://127.0.0.1:8000/'
+let API_URL = 'https://fin-agents-a0zk.onrender.com/'
 // --- Types ---
 interface StockData {
   symbol: string;
@@ -90,7 +90,7 @@ const SymbolSearch = ({ onSelect, placeholder = "Search symbol..." }: { onSelect
       if (query.trim().length > 0) {
         setIsLoading(true);
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/search/?q=${query}`);
+          const response = await fetch(`${API_URL}api/search/?q=${query}`);
           const data = await response.json();
           if (data && data.result) {
             setResults(data.result);
@@ -800,8 +800,8 @@ export default function App() {
                   <div className={`max-w-[78%] flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
                     <div
                       className={`rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-md ${msg.sender === 'user'
-                          ? 'text-white rounded-br-sm'
-                          : 'text-gray-100 border border-gray-700/60 rounded-bl-sm backdrop-blur-sm'
+                        ? 'text-white rounded-br-sm'
+                        : 'text-gray-100 border border-gray-700/60 rounded-bl-sm backdrop-blur-sm'
                         }`}
                       style={msg.sender === 'user'
                         ? { background: 'linear-gradient(135deg, #2563eb, #4f46e5)' }

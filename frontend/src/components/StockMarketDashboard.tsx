@@ -102,7 +102,7 @@ export const StockMarketDashboard: React.FC = () => {
           { symbol: "JPM", name: "JPMorgan Chase & Co.", exchange: "NYSE", type: "Equity" },
           { symbol: "V", name: "Visa Inc.", exchange: "NYSE", type: "Equity" },
           { symbol: "JNJ", name: "Johnson & Johnson", exchange: "NYSE", type: "Equity" },
-        ].filter(item => 
+        ].filter(item =>
           item.symbol.toLowerCase().includes(query.toLowerCase()) ||
           item.name.toLowerCase().includes(query.toLowerCase())
         );
@@ -129,15 +129,15 @@ export const StockMarketDashboard: React.FC = () => {
       // Try using your backend API first
       try {
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/stock?symbol=${symbol}&period=6mo`
+          `https://fin-agents-a0zk.onrender.com/api/stock?symbol=${symbol}&period=6mo`
         );
-        
+
         if (response.data && response.data.prices && response.data.prices.length > 0) {
           const latest = response.data.prices[response.data.prices.length - 1];
           const previous = response.data.prices[response.data.prices.length - 2] || latest;
           const change = latest.close - previous.close;
           const changePercent = (change / previous.close) * 100;
-          
+
           setStockQuote({
             symbol: symbol,
             name: selectedStock?.name || symbol,
@@ -196,9 +196,9 @@ export const StockMarketDashboard: React.FC = () => {
           "6M": "6mo",
           "1Y": "1y",
         };
-        
+
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/stock?symbol=${symbol}&period=${periodMap[timeframe]}`
+          `https://fin-agents-a0zk.onrender.com/api/stock?symbol=${symbol}&period=${periodMap[timeframe]}`
         );
 
         if (response.data && response.data.prices) {
@@ -215,12 +215,12 @@ export const StockMarketDashboard: React.FC = () => {
         // Fallback to Alpha Vantage
         const interval = timeframe === "1D" ? "60min" : timeframe === "1W" ? "60min" : "daily";
         const outputSize = timeframe === "1D" || timeframe === "1W" ? "compact" : "full";
-        
+
         const response = await axios.get(
           `https://www.alphavantage.co/query?function=TIME_SERIES_${interval === "daily" ? "DAILY" : "INTRADAY"}&symbol=${symbol}&interval=${interval}&outputsize=${outputSize}&apikey=${ALPHA_VANTAGE_API_KEY}`
         );
 
-        const timeSeriesKey = interval === "daily" 
+        const timeSeriesKey = interval === "daily"
           ? "Time Series (Daily)"
           : `Time Series (${interval})`;
 
@@ -515,9 +515,8 @@ export const StockMarketDashboard: React.FC = () => {
                   ${stockQuote.price.toFixed(2)}
                 </div>
                 <div
-                  className={`text-lg font-semibold ${
-                    stockQuote.change >= 0 ? "text-green-600" : "text-red-600"
-                  }`}
+                  className={`text-lg font-semibold ${stockQuote.change >= 0 ? "text-green-600" : "text-red-600"
+                    }`}
                 >
                   {stockQuote.change >= 0 ? "+" : ""}
                   {stockQuote.change.toFixed(2)} ({stockQuote.changePercent >= 0 ? "+" : ""}
@@ -559,11 +558,10 @@ export const StockMarketDashboard: React.FC = () => {
                 <button
                   key={tf}
                   onClick={() => setTimeframe(tf)}
-                  className={`px-4 py-2 rounded-lg font-medium transition ${
-                    timeframe === tf
+                  className={`px-4 py-2 rounded-lg font-medium transition ${timeframe === tf
                       ? "bg-blue-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   {tf}
                 </button>

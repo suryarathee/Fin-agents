@@ -17,7 +17,7 @@ interface StockCandle {
   volume?: number;
 }
 
-const API_BASE_URL = "http://127.0.0.1:8000/api/stock-history/";
+const API_BASE_URL = "https://fin-agents-a0zk.onrender.com/api/stock-history/";
 const WS_API_KEY = import.meta.env.VITE_FINNHUB_API_KEY;
 
 type Resolution = '1s' | '1' | '5' | '15' | '60' | 'D';
