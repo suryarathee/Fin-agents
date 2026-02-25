@@ -319,10 +319,15 @@ export default function App() {
     const POLLING_INTERVAL = 3000; // 3 seconds
     let consecutiveErrors = 0;
     const MAX_CONSECUTIVE_ERRORS = 5;
+    let isDone = false; // guard: prevents duplicate messages from concurrent async ticks
 
     const intervalId = setInterval(async () => {
+      // Already handled — skip this tick
+      if (isDone) return;
+
       // 1. Check for total timeout
       if (Date.now() - startTime > TIMEOUT_MS) {
+        isDone = true;
         clearInterval(intervalId);
         setMessages((prev) => [
           ...prev,
@@ -351,6 +356,8 @@ export default function App() {
         consecutiveErrors = 0;
 
         if (status === 'SUCCESS') {
+          if (isDone) return; // another tick already handled it
+          isDone = true;
           clearInterval(intervalId);
           if (result && typeof result.message === 'string') {
             setMessages((prev) => [
@@ -375,6 +382,8 @@ export default function App() {
           }
           setChatLoading(false);
         } else if (status === 'FAILURE') {
+          if (isDone) return;
+          isDone = true;
           clearInterval(intervalId);
           setMessages((prev) => [
             ...prev,
@@ -393,6 +402,8 @@ export default function App() {
         console.error('Error polling chat status:', error);
         consecutiveErrors++;
         if (consecutiveErrors > MAX_CONSECUTIVE_ERRORS) {
+          if (isDone) return;
+          isDone = true;
           clearInterval(intervalId);
           setMessages((prev) => [
             ...prev,

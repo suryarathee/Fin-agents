@@ -16,50 +16,28 @@ FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com"
 FINNHUB_API_KEY = os.getenv("VITE_FINNHUB_API_KEY")
 
 
-def request_task_manager(method, endpoint, payload=None, timeout=30):
+def request_task_manager(method, endpoint, payload=None, timeout=90):
     """
     Helper function to send requests to the Task Manager (FastAPI).
-    Retries up to MAX_RETRIES times with exponential backoff on connection
-    errors or timeouts (cold-start delay on Render).
+    Makes a single attempt with a generous timeout. On failure raises
+    immediately so the caller can return a 503 — the frontend handles retries.
+    (Blocking sleep inside a Gunicorn sync worker kills the process.)
     """
-    urls_to_try = [FASTAPI_URL]
-
-    MAX_RETRIES = 10
-    RETRY_BASE_DELAY = 5  # seconds; doubles each attempt, capped at 60s
-    last_exception = None
-
-    for attempt in range(MAX_RETRIES + 1):
-        for base_url in urls_to_try:
-            url = f"{base_url}{endpoint}"
-            try:
-                print(f"[DJANGO] Attempt {attempt + 1} — connecting to Task Manager at: {url}")
-                if method.upper() == 'POST':
-                    response = requests.post(url, json=payload, timeout=timeout)
-                elif method.upper() == 'GET':
-                    response = requests.get(url, timeout=timeout)
-                else:
-                    raise ValueError(f"Unsupported method: {method}")
-
-                # Got a response (even 4xx/5xx) — return it, no retry needed
-                return response
-
-            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
-                print(f"[DJANGO WARNING] Attempt {attempt + 1} failed for {base_url}: {e}")
-                last_exception = e
-                continue
-
-            except Exception as e:
-                print(f"[DJANGO WARNING] Unexpected error on attempt {attempt + 1} for {base_url}: {e}")
-                last_exception = e
-                continue
-
-        if attempt < MAX_RETRIES:
-            delay = min(RETRY_BASE_DELAY * (2 ** attempt), 60)
-            print(f"[DJANGO] All URLs failed. Retrying in {delay}s… ({attempt + 1}/{MAX_RETRIES})")
-            time.sleep(delay)
-
-    print("[DJANGO ERROR] All Task Manager connection attempts exhausted.")
-    raise last_exception or Exception("Unknown connection error")
+    url = f"{FASTAPI_URL}{endpoint}"
+    print(f"[DJANGO] Connecting to Task Manager at: {url}")
+    try:
+        if method.upper() == 'POST':
+            return requests.post(url, json=payload, timeout=timeout)
+        elif method.upper() == 'GET':
+            return requests.get(url, timeout=timeout)
+        else:
+            raise ValueError(f"Unsupported method: {method}")
+    except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+        print(f"[DJANGO WARNING] Task Manager unreachable: {e}")
+        raise
+    except Exception as e:
+        print(f"[DJANGO WARNING] Unexpected error: {e}")
+        raise
 
 
 @api_view(['POST'])
