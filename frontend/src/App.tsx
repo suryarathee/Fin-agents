@@ -339,7 +339,7 @@ export default function App() {
 
       // 2. Try to get the status
       try {
-        const pollUrl = `${API_URL}/api/chat/status/${taskId}/`;
+        const pollUrl = `${API_URL}api/chat/status/${taskId}/`;
         console.log('Polling chat status from:', pollUrl);
         const response = await fetch(pollUrl);
         if (!response.ok) throw new Error('Network response was not ok');
@@ -412,40 +412,81 @@ export default function App() {
   const processMessage = async (messageText: string) => {
     setChatLoading(true);
 
-    try {
-      const requestUrl = `${API_URL}/api/chat/`;
-      console.log('Sending chat message to:', requestUrl, 'Payload:', { message: messageText });
-      const response = await fetch(requestUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: messageText }),
-      });
+    const MAX_RETRIES = 10;
+    const RETRY_BASE_DELAY = 5000; // 5s base, doubles up to 60s
+    const WARMING_MSG_ID = -999; // stable ID for the warming-up message
 
-      if (!response.ok) throw new Error('Network response was not ok');
+    // Show a warming-up indicator (only once)
+    let warmingShown = false;
 
-      const data = await response.json();
-      console.log('Chat message sent, response:', data);
-      const { task_id } = data;
-
-      if (task_id) {
-        await pollChatResult(task_id);
-      } else {
-        throw new Error('Failed to get a task ID from the server.');
+    const showWarming = () => {
+      if (!warmingShown) {
+        warmingShown = true;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: WARMING_MSG_ID,
+            text: '⏳ Server is warming up… retrying automatically, please wait.',
+            sender: 'bot' as const,
+            timestamp: new Date(),
+          },
+        ]);
       }
-    } catch (error) {
-      console.error('Error in processMessage:', error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          text: 'Sorry, could not connect to the agent. Please Retry',
-          sender: 'bot',
-          timestamp: new Date(),
-        },
-      ]);
-      setChatLoading(false);
+    };
+
+    const removeWarming = () => {
+      setMessages((prev) => prev.filter((m) => m.id !== WARMING_MSG_ID));
+    };
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const requestUrl = `${API_URL}api/chat/`;
+        console.log(`[attempt ${attempt + 1}] Sending chat to:`, requestUrl);
+        const response = await fetch(requestUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: messageText }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        const { task_id } = data;
+
+        if (!task_id) throw new Error('No task_id returned.');
+
+        // Success — remove warming indicator and start polling
+        removeWarming();
+        await pollChatResult(task_id);
+        return; // done
+
+      } catch (error) {
+        console.warn(`[attempt ${attempt + 1}] Chat POST failed:`, error);
+
+        if (attempt === MAX_RETRIES) {
+          // All retries exhausted
+          removeWarming();
+          setMessages((prev) => [
+            ...prev,
+            {
+              id: Date.now() + 1,
+              text: '❌ Could not reach the server after several retries. Please try again later.',
+              sender: 'bot' as const,
+              timestamp: new Date(),
+            },
+          ]);
+          setChatLoading(false);
+          return;
+        }
+
+        // Show warming indicator on first failure
+        showWarming();
+
+        // Exponential backoff: 5s, 10s, 20s, 40s, 60s, 60s, …
+        const delay = Math.min(RETRY_BASE_DELAY * Math.pow(2, attempt), 60000);
+        console.log(`Retrying in ${delay / 1000}s…`);
+        await new Promise((res) => setTimeout(res, delay));
+      }
     }
   };
 

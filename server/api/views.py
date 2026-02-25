@@ -12,50 +12,51 @@ import time
 
 PRIMARY_FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com"
 LOCAL_FASTAPI_URL = "http://localhost:8082"
-FINNHUB_API_KEY = os.getenv("VITE_FINNHUB_API_KEY", "d3ucal1r01qil4apduf0d3ucal1r01qil4apdufg")
+FINNHUB_API_KEY = os.getenv("VITE_FINNHUB_API_KEY")
 
-def request_task_manager(method, endpoint, payload=None, timeout=10):
+def request_task_manager(method, endpoint, payload=None, timeout=30):
     """
     Helper function to send requests to the Task Manager (FastAPI).
-    It first tries the PRIMARY_FASTAPI_URL (hosted).
-    If that fails (connection error), it falls back to LOCAL_FASTAPI_URL.
+    Retries up to MAX_RETRIES times with exponential backoff on connection
+    errors or timeouts (cold-start delay on Render).
     """
-    urls_to_try = [ LOCAL_FASTAPI_URL]
+    urls_to_try = [LOCAL_FASTAPI_URL]
 
+    MAX_RETRIES = 10
+    RETRY_BASE_DELAY = 5  # seconds; doubles each attempt, capped at 60s
     last_exception = None
 
-    for base_url in urls_to_try:
-        url = f"{base_url}{endpoint}"
-        try:
-            print(f"[DJANGO] Attempting connection to Task Manager at: {url}")
-            if method.upper() == 'POST':
-                response = requests.post(url, json=payload, timeout=timeout)
-            elif method.upper() == 'GET':
-                response = requests.get(url, timeout=timeout)
-            else:
-                raise ValueError(f"Unsupported method: {method}")
+    for attempt in range(MAX_RETRIES + 1):
+        for base_url in urls_to_try:
+            url = f"{base_url}{endpoint}"
+            try:
+                print(f"[DJANGO] Attempt {attempt + 1} — connecting to Task Manager at: {url}")
+                if method.upper() == 'POST':
+                    response = requests.post(url, json=payload, timeout=timeout)
+                elif method.upper() == 'GET':
+                    response = requests.get(url, timeout=timeout)
+                else:
+                    raise ValueError(f"Unsupported method: {method}")
 
-            # If we get a response, even if it's an error status code (like 404 or 500),
-            # we consider the connection successful and return the response.
-            # We let the caller handle the status code logic.
-            return response
+                # Got a response (even 4xx/5xx) — return it, no retry needed
+                return response
 
-        except requests.exceptions.ConnectionError as e:
-            print(f"[DJANGO WARNING] Connection failed to {base_url}. Error: {e}")
-            last_exception = e
-            continue  # Try the next URL
-        except Exception as e:
-            # For other errors (like timeout inside the request but connection established),
-            # we might also want to fallback? For now let's treat generic RequestException as fallback-able
-            # if strictly connection related, but here we catch generic Exception to be safe?
-            # Actually, standardizing on ConnectionError is safer for "server down" vs "bad request".
-            # Let's catch RequestException to cover timeouts too.
-            print(f"[DJANGO WARNING] Request failed to {base_url}. Error: {e}")
-            last_exception = e
-            continue
+            except (requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
+                print(f"[DJANGO WARNING] Attempt {attempt + 1} failed for {base_url}: {e}")
+                last_exception = e
+                continue
 
-    # If loop finishes, all attempts failed
-    print("[DJANGO ERROR] All Task Manager connection attempts failed.")
+            except Exception as e:
+                print(f"[DJANGO WARNING] Unexpected error on attempt {attempt + 1} for {base_url}: {e}")
+                last_exception = e
+                continue
+
+        if attempt < MAX_RETRIES:
+            delay = min(RETRY_BASE_DELAY * (2 ** attempt), 60)
+            print(f"[DJANGO] All URLs failed. Retrying in {delay}s… ({attempt + 1}/{MAX_RETRIES})")
+            time.sleep(delay)
+
+    print("[DJANGO ERROR] All Task Manager connection attempts exhausted.")
     raise last_exception or Exception("Unknown connection error")
 
 
