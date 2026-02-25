@@ -12,7 +12,9 @@ import time
 
 PRIMARY_FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com"
 LOCAL_FASTAPI_URL = "http://localhost:8082"
+FASTAPI_URL = "https://deploy-agents-vlgw.onrender.com"
 FINNHUB_API_KEY = os.getenv("VITE_FINNHUB_API_KEY")
+
 
 def request_task_manager(method, endpoint, payload=None, timeout=30):
     """
@@ -20,7 +22,7 @@ def request_task_manager(method, endpoint, payload=None, timeout=30):
     Retries up to MAX_RETRIES times with exponential backoff on connection
     errors or timeouts (cold-start delay on Render).
     """
-    urls_to_try = [LOCAL_FASTAPI_URL]
+    urls_to_try = [FASTAPI_URL]
 
     MAX_RETRIES = 10
     RETRY_BASE_DELAY = 5  # seconds; doubles each attempt, capped at 60s
