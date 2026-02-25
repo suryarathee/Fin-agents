@@ -162,8 +162,8 @@ const MarketClock: React.FC = () => {
     };
 
     return (
-        <div className="bg-gray-950 border-b border-gray-800 p-2 mb-4 shadow-lg">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <div className="bg-gray-950 border-b border-gray-800 p-1 md:p-2 shadow-lg sticky top-0 z-50 transition-all duration-300">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-2">
                 {MARKETS.map((market) => {
                     const status = getMarketStatus(market, time);
                     const scheduleText = getMarketSchedule(market, time);
@@ -179,24 +179,24 @@ const MarketClock: React.FC = () => {
                     const borderClass = status.isOpen ? 'border-green-500/20 bg-green-950/20' : 'border-red-900/20 bg-red-950/10';
 
                     return (
-                        <div key={market.id} className={`rounded-md p-2 border ${borderClass} flex items-center justify-between relative overflow-visible group transition-all duration-300`}>
+                        <div key={market.id} className={`rounded p-1.5 md:p-2 border ${borderClass} flex items-center justify-between relative overflow-visible group transition-all duration-300`}>
                             {/* Tooltip */}
-                            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-800 border border-gray-700 text-white text-[10px] rounded shadow-xl whitespace-nowrap z-50 pointer-events-none">
+                            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity duration-200 top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 border border-gray-700 text-white text-[10px] rounded shadow-xl whitespace-nowrap z-50 pointer-events-none">
                                 {scheduleText}
-                                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-800"></div>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 -mb-1 border-4 border-transparent border-b-gray-800"></div>
                             </div>
 
                             <div className="flex flex-col">
-                                <div className="flex items-center gap-2 mb-0.5">
-                                    <span className="text-sm opacity-80">{market.flag}</span>
-                                    <span className="text-xs font-bold text-gray-400 tracking-wider font-led">{market.shortName}</span>
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                    <span className="text-xs md:text-sm opacity-80">{market.flag}</span>
+                                    <span className="text-[10px] md:text-xs font-bold text-gray-400 tracking-wider font-led">{market.shortName}</span>
                                 </div>
-                                <div className={`text-sm font-bold uppercase tracking-wider ${status.isOpen ? 'text-green-500' : 'text-red-500'}`}>
+                                <div className={`text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${status.isOpen ? 'text-green-500' : 'text-red-500'}`}>
                                     {status.status}
                                 </div>
                             </div>
 
-                            <div className={`text-xl font-led font-bold tracking-widest ${glowClass} tabular-nums`}>
+                            <div className={`text-sm md:text-lg lg:text-xl font-led font-bold tracking-widest ${glowClass} tabular-nums`}>
                                 {timeString}
                             </div>
                         </div>

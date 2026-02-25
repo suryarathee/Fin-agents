@@ -19,7 +19,8 @@ export default function LoadingScreen({ onComplete }: { onComplete?: () => void 
         // Progress interval
         const interval = setInterval(() => {
             setProgress(prev => {
-                const increment = Math.random() * 15;
+                // drastically increase increment to make it fast
+                const increment = Math.random() * 30 + 10;
                 const newProgress = Math.min(prev + increment, 100);
 
                 // Update text based on progress
@@ -35,12 +36,12 @@ export default function LoadingScreen({ onComplete }: { onComplete?: () => void 
                     clearInterval(interval);
                     setTimeout(() => {
                         if (onComplete) onComplete();
-                    }, 500);
+                    }, 100); // reduced from 500
                     return 100;
                 }
                 return newProgress;
             });
-        }, 150);
+        }, 30); // reduced from 150
 
         return () => clearInterval(interval);
     }, [onComplete]);
@@ -69,9 +70,7 @@ export default function LoadingScreen({ onComplete }: { onComplete?: () => void 
                 <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-white to-blue-400 tracking-tight mb-2">
                     Fin-agents
                 </h1>
-                <p className="text-blue-200/60 text-sm font-mono tracking-wider mb-10">
-                    TERMINAL V2.4.0
-                </p>
+
 
                 {/* Progress Bar Container */}
                 <div className="w-full bg-gray-800/50 rounded-full h-1.5 mb-4 overflow-hidden ring-1 ring-white/5 backdrop-blur-sm">
@@ -85,7 +84,6 @@ export default function LoadingScreen({ onComplete }: { onComplete?: () => void 
 
                 {/* Status Text and Percentage */}
                 <div className="flex justify-between w-full text-xs font-mono">
-                    <span className="text-blue-300 animate-pulse">{loadingText}</span>
                     <span className="text-blue-400 font-bold">{Math.round(progress)}%</span>
                 </div>
 
