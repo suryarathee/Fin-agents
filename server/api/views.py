@@ -44,12 +44,11 @@ def request_task_manager(method, endpoint, payload=None, timeout=90):
 def chat_endpoint(request):
     """
     Send a chat message to the financial coordinator agent via the FastAPI middleware.
-
     Request body:
     {
         "message": "Your message here",
-        "session_id": "optional-session-id",
-        "user_id": "optional-user-id"
+        "session_id": "session-id",
+        "user_id": "user-id"
     }
     """
     try:
@@ -69,7 +68,6 @@ def chat_endpoint(request):
         if not session_id:
             session_id = str(uuid.uuid4())
 
-        # ✅ Build Payload matching FastAPI's AgentRequest model
         payload = {
             "appName": "agent",
             "userId": user_id,
